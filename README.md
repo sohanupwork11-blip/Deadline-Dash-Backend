@@ -25,6 +25,7 @@ For local development, install `requirements.txt` and run `python manage.py migr
 - `GET, POST /api/tasks/` lists or creates tasks for projects you own.
 - `GET, PATCH, DELETE /api/tasks/{id}/` manage an owned task. Filter with `project`, `status`, or `priority`.
 - `GET /api/billing/subscription/` returns the authenticated user's current plan and period.
+- `GET /api/dashboard/summary/` returns the authenticated user's project totals and task totals, including open, overdue, and due-within-seven-days counts.
 
 Send protected requests with `Authorization: Bearer <access-token>`. Project and task records are restricted to their owner. List endpoints are paginated; projects and tasks support search and ordering.
 

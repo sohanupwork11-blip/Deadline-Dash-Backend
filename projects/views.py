@@ -1,10 +1,39 @@
+from datetime import timedelta
+
 from django.db.models import Count, Q
 from django.utils import timezone
 from rest_framework import filters, viewsets
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from projects.models import Project, Task
 from projects.permissions import IsProjectOwner
 from projects.serializers import ProjectSerializer, TaskSerializer
+
+
+class DashboardSummaryView(APIView):
+    def get(self, request):
+        today = timezone.localdate()
+        week_end = today + timedelta(days=7)
+        project_counts = Project.objects.filter(owner=request.user).aggregate(
+            total=Count("id"),
+            active=Count("id", filter=Q(status=Project.Status.ACTIVE)),
+            completed=Count("id", filter=Q(status=Project.Status.COMPLETED)),
+        )
+        task_counts = Task.objects.filter(project__owner=request.user).aggregate(
+            total=Count("id"),
+            open=Count("id", filter=~Q(status=Task.Status.DONE)),
+            overdue=Count(
+                "id",
+                filter=Q(due_date__lt=today) & ~Q(status=Task.Status.DONE),
+            ),
+            due_this_week=Count(
+                "id",
+                filter=Q(due_date__gte=today, due_date__lte=week_end)
+                & ~Q(status=Task.Status.DONE),
+            ),
+        )
+        return Response({"projects": project_counts, "tasks": task_counts})
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
